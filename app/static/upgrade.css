@@ -1,0 +1,701 @@
+/* ===== 视觉升级演示层 v4：「剪辑工作室」主题 + 全局字号放大 =====
+   基于 20260830-ui4 版页面。叠加在最后即可生效，删除本文件即恢复原样。
+   v4 重点：所有 rem 字号随根字号放大，小字类再单独补大；内容区右侧有清晰滚动条。 */
+
+:root {
+  /* 默认「天蓝」调色板 = 暖米色纸底 + 蓝色强调；
+     upgrade.js 会按用户选择的主题覆盖以下全部变量（黑白为另一套，配合 body.biz）。
+     这些值只作 JS 未加载时的兜底，不要在这里写死新的主题颜色。 */
+  --paper: #f1efe3;
+  --paper-2: #e9e7d6;
+  --card: #fdfcf6;
+  --ink: #14283f;
+  --ink-rgb: 20, 40, 63;
+  --ink-soft: #4a5a6e;
+  --lime: #8ecdf5;
+  --lime-deep: #5aaee8;
+  --lime-soft: #e6f3fd;
+  --lime-rgb: 142, 205, 245;
+  --line: #d4d6c0;
+  --line-mid: var(--line-mid);
+  --wash: #f7f6ec;
+  --wash-2: #eeece0;
+  /* 旧层（overrides.css / studio.css）遗留的变量名，统一别名到当前主题 */
+  --olive: var(--lime-deep);
+  --olive-deep: var(--lime-deep);
+  --soft-olive: var(--lime-soft);
+  --r-sm: 8px;
+  --r-md: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------- 0) 全局字号：随屏幕宽度自适应，200% 缩放下约 18px ---------- */
+html { font-size: clamp(16px, 6px + 0.8vw, 22px); }
+
+/* 超宽屏限宽居中，不再拉满整个窗口 */
+main { max-width: 1760px !important; margin: 0 auto !important; }
+
+/* 抽屉宽度随根字号等比放大，保持紧凑比例 */
+.workbench-shell { grid-template-columns: 13.5rem minmax(0, 1fr) !important; }
+
+/* "快速配置"提示紧跟步骤，不再沉底留大段空白 */
+.drawer-tip { margin-top: 12px !important; }
+
+/* 抽屉高度只包住内容，不再撑满整屏留下半屏空壳；
+   同时内容区保持满高，右侧滚动条照常工作（v9 曾把滚动改坏，这里修正） */
+.workbench-shell { align-items: start !important; grid-template-rows: minmax(0, 1fr) !important; }
+.workflow-drawer { height: auto !important; }
+.studio { align-self: stretch !important; height: 100% !important; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "HarmonyOS Sans SC", "Source Han Sans SC", "Noto Sans CJK SC",
+    "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* 原来特别小的字，再单独补大 */
+label, legend { font-size: .95rem; }
+.hint { font-size: .88rem; color: var(--ink-soft); }
+.steps button { font-size: .92rem; }
+.workflow-drawer button { font-size: .98rem; }
+.workflow-drawer button span { font-size: .85rem; }
+.drawer-eyebrow { font-size: .8rem; }
+.drawer-tip { font-size: .82rem; }
+.asset-summary span { font-size: .82rem; }
+.notice { font-size: .92rem; }
+.workspace-mode #mode-description { font-size: .85rem; }
+.card-status, .chip { font-size: .78rem; }
+.templates button { font-size: .88rem; }
+.locked-note { font-size: .85rem; }
+.section-kicker { font-size: .78rem; }
+fieldset legend { font-size: .8rem; }
+.edit-section summary, .fish-controls summary, .compute-note summary { font-size: .95rem; }
+
+/* 控件高度适中，配合新字号 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select { min-height: 40px; }
+form.stack > button:not(.secondary),
+#save-rewritten,
+#person-submit, #voice-submit, #confirm-voice,
+#generate-video, #edit-submit {
+  min-height: 44px;
+  font-size: 1.02rem;
+}
+
+/* ---------- 1) 内容区滚动条：清晰可见，随内容滑动 ---------- */
+.studio { scrollbar-width: auto; scrollbar-color: var(--lime-deep) transparent; }
+.studio::-webkit-scrollbar { width: 12px; }
+.studio::-webkit-scrollbar-thumb {
+  background: var(--lime-deep);
+  border: 3px solid var(--paper);
+  border-radius: 8px;
+}
+.studio::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+.workflow-drawer::-webkit-scrollbar { width: 8px; }
+.workflow-drawer::-webkit-scrollbar-thumb { background: var(--line-mid); border-radius: 6px; }
+
+/* ---------- 2) 顶部：墨色工作牌 ---------- */
+.topbar {
+  height: auto;
+  padding: 8px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--ink);
+  box-shadow: 4px 4px 0 rgba(var(--ink-rgb), .18);
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.topbar .eyebrow { color: var(--lime); letter-spacing: .22em; }
+.topbar strong { color: #f5f7ea; }
+.topbar strong:hover { background: rgba(var(--lime-rgb), .15); }
+.topbar .save-state { background: rgba(var(--lime-rgb), .14); color: var(--lime); font-family: var(--mono); }
+.topbar .project-switcher { background: #2c3d1d; color: #d9e2c4; border-color: #44543a; }
+.topbar .new-project-btn { background: var(--lime); color: var(--ink); border-radius: var(--r-sm); }
+.topbar .new-project-btn:hover { background: var(--lime-deep); }
+.topbar .save-btn { background: transparent; color: #e7edda; border: 1px solid #57684a; }
+.topbar .manage-btn { background: transparent; color: #c6d2b2; border: 1px solid #57684a; }
+
+/* ---------- 3) 模式切换与步骤条 ---------- */
+.workspace-mode { border: 0; background: transparent; padding: 2px; gap: 8px; }
+.workspace-mode button { border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: .92rem; color: var(--ink-soft); }
+.workspace-mode button.active { background: var(--lime); color: var(--ink); box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .25); }
+.workspace-mode #mode-description { color: var(--ink-soft); font-family: var(--mono); }
+
+.steps { scrollbar-width: none; display: flex; align-items: center; gap: 8px; margin: 10px 0 10px; }
+.steps::-webkit-scrollbar { display: none; }
+.steps i { display: none; }
+.steps button {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  white-space: nowrap;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-weight: 700;
+  box-shadow: none;
+}
+.steps button.completed { border-color: var(--ink); color: var(--ink); background: var(--lime-soft); }
+.steps button.current { background: var(--ink); border-color: var(--ink); color: var(--lime); }
+
+/* ---------- 4) 提示条 ---------- */
+.notice {
+  border: 0;
+  border-left: 5px solid var(--lime-deep);
+  border-radius: var(--r-sm);
+  background: var(--lime-soft);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* ---------- 5) 左侧抽屉 ---------- */
+.workflow-drawer {
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  box-shadow: 4px 4px 0 rgba(var(--ink-rgb), .15);
+}
+.drawer-eyebrow { color: var(--ink-soft); }
+.asset-summary span { background: var(--card); border: 1px dashed var(--line-mid); border-radius: var(--r-sm); font-family: var(--mono); }
+.workflow-drawer button { border-radius: var(--r-sm); transition: background .15s ease; }
+.workflow-drawer button:hover { background: rgba(var(--lime-rgb), .3); }
+.workflow-drawer button.active { background: var(--ink); color: var(--lime-soft); }
+.workflow-drawer button.active span { color: var(--lime); }
+.drawer-tip { border-top: 1.5px dashed var(--line-mid); color: var(--ink-soft); }
+.drawer-tip strong { color: var(--ink); }
+
+/* ---------- 6) 面板标题 ---------- */
+.panel-heading { border-bottom: 2px solid var(--ink); }
+.section-kicker { color: var(--ink); background: var(--lime); padding: 2px 8px; border-radius: 4px; display: inline-block; font-family: var(--mono); font-weight: 700; letter-spacing: .14em; }
+.panel-heading h1 { font-size: 1.6rem; letter-spacing: -0.015em; color: var(--ink); }
+.panel-state { border: 1.5px solid var(--ink); background: var(--card); color: var(--ink); font-family: var(--mono); font-size: .8rem; box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .2); }
+
+/* ---------- 7) 创作路径 Tab（新版新增） ---------- */
+.path-switch .path-tab {
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: .95rem;
+  box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .18);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.path-switch .path-tab:hover { background: var(--lime-soft); }
+.path-switch .path-tab.active {
+  background: var(--lime);
+  color: var(--ink);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 rgba(var(--ink-rgb), .18);
+}
+
+/* ---------- 8) 卡片 ---------- */
+.panel .card {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: 5px 5px 0 rgba(var(--ink-rgb), .14);
+  padding: 20px;
+}
+.panel h2 { color: var(--ink); font-size: 1.25rem; }
+.panel h2:before { background: var(--lime); border: 1.5px solid var(--ink); color: var(--ink); box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .25); }
+.card-status, .chip { background: var(--lime-soft); border: 1.5px solid var(--lime-deep); color: var(--ink); border-radius: 999px; }
+
+/* ---------- 9) 模板胶囊 ---------- */
+.templates button {
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .18);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.templates button:hover { background: var(--lime); transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(var(--ink-rgb), .18); }
+
+/* ---------- 10) 表单控件 ---------- */
+label, legend { color: var(--ink); font-weight: 600; }
+input, textarea, select { border: 1.5px solid var(--line-mid); border-radius: var(--r-sm); background: #fffef8; color: var(--ink); }
+input:focus, textarea:focus, select:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(var(--lime-rgb), .5); }
+fieldset, .voice-detail { border: 1.5px dashed var(--line-mid); border-radius: var(--r-sm); background: #f7f6ec; }
+fieldset legend { font-family: var(--mono); letter-spacing: .1em; }
+.file-control { border: 1.5px dashed var(--line-mid); border-radius: var(--r-sm); background: #fffef8; }
+.file-button, .secondary {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .18);
+}
+.file-button:hover, .secondary:hover { background: var(--lime-soft); }
+.fish-controls, .edit-section, .compute-note { border: 1.5px solid var(--line); border-radius: var(--r-sm); background: #f8f7ee; }
+.locked-note { color: #8a7a2a; }
+
+/* ---------- 11) 主行动按钮：青柠 + 按压手感 ---------- */
+/* #save-rewritten（确认文案）虽挂 secondary 类，但它是第 1 步的主行动按钮，
+   与 #confirm-voice 同理：用 ID 规则覆盖成主按钮外观，避免白底轮廓不醒目 */
+form.stack > button:not(.secondary),
+#save-rewritten,
+#person-submit, #voice-submit, #confirm-voice,
+#generate-video, #edit-submit {
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--lime);
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: .06em;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform .1s ease, box-shadow .1s ease, background .15s ease;
+  cursor: pointer;
+}
+form.stack > button:not(.secondary):hover,
+#save-rewritten:hover,
+#person-submit:hover, #voice-submit:hover, #confirm-voice:hover,
+#generate-video:hover, #edit-submit:hover {
+  background: var(--lime-deep);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+#cancel-video { box-shadow: none; }
+
+button:disabled, form.stack > button:disabled,
+#generate-video:disabled, #edit-submit:disabled {
+  background: #e5e7ea !important;
+  color: #9aa0a8 !important;
+  border-color: #c9cdd3 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+}
+
+/* ---------- 12) 预览占位与弹窗 ---------- */
+.preview-placeholder {
+  border: 1.5px dashed var(--line-mid);
+  border-radius: var(--r-md);
+  background: repeating-linear-gradient(-45deg, #f4f3e8 0 12px, #eeece0 12px 24px);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: .85rem;
+}
+.video-label { font-family: var(--mono); font-size: .78rem; letter-spacing: .08em; color: var(--ink-soft); }
+.dialog-box { border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--card); box-shadow: 6px 6px 0 rgba(var(--ink-rgb), .25); }
+.dialog-btn.primary { background: var(--lime); color: var(--ink); border: 1.5px solid var(--ink); }
+
+/* ---------- 13) 窄屏修正 ---------- */
+@media (max-width: 960px) {
+  .topbar { min-height: 0; }
+  .asset-summary { display: none; }
+  .panel-heading h1 { font-size: 1.5rem; }
+  .panel .card { padding: 18px; box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .14); }
+}
+
+/* ==================== v12：结构重心下移 ==================== */
+/* 1) 顶部重复步骤条隐藏，流程导航由左侧抽屉承担 */
+.steps { display: none !important; }
+
+/* 2) 顶栏从"粗腰带"变成"极细状态行"：透明、无框、无阴影 */
+.topbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 2px !important;
+  min-height: 0 !important;
+}
+.topbar .eyebrow { color: var(--ink-soft) !important; letter-spacing: .18em; font-size: .72rem !important; }
+.topbar strong { color: var(--ink) !important; font-size: .95rem !important; }
+.topbar strong:hover { background: var(--lime-soft) !important; }
+.topbar .save-state { background: var(--lime-soft) !important; color: var(--ink) !important; font-size: .72rem !important; }
+.topbar .save-btn { color: var(--ink-soft) !important; border-color: var(--line) !important; font-size: .78rem !important; min-height: 30px !important; padding: 3px 12px !important; }
+
+/* 3) 模式切换与提示条瘦身 */
+.workspace-mode button { padding: 6px 14px !important; font-size: .88rem !important; }
+.notice {
+  min-height: 0 !important;
+  padding: 6px 12px !important;
+  font-size: .85rem !important;
+  margin: 6px 0 10px !important;
+  border-left-width: 4px !important;
+}
+
+/* 4) 抽屉顶部项目卡：低频项目管理入口收纳于此 */
+.project-card {
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .15);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.project-card .pc-row { display: flex; gap: 6px; }
+.project-card .pc-row button { flex: 1; min-height: 34px !important; font-size: .8rem !important; padding: 4px 6px !important; }
+.project-card select { width: 100%; min-height: 34px !important; font-size: .8rem !important; }
+
+/* ==================== v13：抽屉升级为整站导航栏 ==================== */
+/* 1) 冗余清理：素材清单、快速配置说明隐藏 */
+.workflow-drawer > .drawer-eyebrow:first-of-type,
+.workflow-drawer .asset-summary,
+.workflow-drawer .drawer-tip { display: none !important; }
+/* 提示条绝不能隐藏：它是所有操作（生成文案/试听/导出…）的错误与进度唯一出口，
+   藏掉它，接口一报错按钮看起来就是「点了没反应」。改为右下角浮动 toast。 */
+.notice {
+  display: flex !important;
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  height: auto !important;
+  max-width: min(560px, calc(100vw - 36px));
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 10px 14px !important;
+  border: 1.5px solid var(--ink);
+  border-left-width: 4px !important;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 rgba(var(--ink-rgb), .18);
+  font-size: .88rem !important;
+  line-height: 1.55;
+  white-space: normal;
+  align-items: flex-start;
+}
+.notice:empty { display: none !important; }
+
+/* 2) 项目管理三样回到顶部状态行右侧，小号浅色样式 */
+.topbar .topbar-right { gap: 8px; }
+.topbar .new-project-btn {
+  background: var(--lime) !important; color: var(--ink) !important;
+  border: 1.5px solid var(--ink) !important; border-radius: var(--r-sm) !important;
+  font-size: .76rem !important; min-height: 30px !important; padding: 3px 12px !important;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .18) !important;
+}
+.topbar .manage-btn {
+  background: transparent !important; color: var(--ink-soft) !important;
+  border: 1px solid var(--line) !important; border-radius: var(--r-sm) !important;
+  font-size: .76rem !important; min-height: 30px !important; padding: 3px 12px !important;
+  box-shadow: none !important;
+}
+.topbar .project-switcher {
+  background: var(--card) !important; color: var(--ink-soft) !important;
+  border: 1px solid var(--line) !important; border-radius: var(--r-sm) !important;
+  font-size: .74rem !important; min-height: 30px !important; max-width: 190px !important;
+}
+
+/* 3) 模块入口：创作（当前）/ 素材库（占位） */
+.module-nav { display: flex; gap: 6px; margin-bottom: 14px; }
+.module-nav button {
+  flex: 1; border: 1.5px solid var(--ink); border-radius: var(--r-sm);
+  background: var(--card); color: var(--ink);
+  font-weight: 700; font-size: .85rem; padding: 8px 4px;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .15); cursor: pointer;
+}
+.module-nav button.active { background: var(--ink); color: var(--lime); }
+.module-nav button.soon { opacity: .5; cursor: default; border-style: dashed; box-shadow: none; }
+
+/* ==================== v14：左右同高 + 项目卡回栏 + 设置卡 ==================== */
+/* 1) 左栏拉满，与右边画布同高对齐 */
+.workbench-shell { align-items: stretch !important; }
+.workflow-drawer { height: auto !important; display: flex; flex-direction: column; }
+
+/* 2) 项目控件进左栏后，顶栏右侧原位隐藏 */
+body.relocated .topbar-right { display: none !important; }
+
+/* 3) 设置卡：钉在左栏底部，平衡上下留白 */
+.settings-card {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1.5px dashed var(--line-mid);
+}
+.settings-card .drawer-eyebrow { margin-bottom: 6px; }
+/* v15：设置卡收成单个按钮，点击打开设置弹窗 */
+.settings-card #drawer-settings-btn {
+  justify-content: center;
+  min-height: 36px;
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .15);
+}
+.set-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: .82rem; color: var(--ink-soft); }
+.set-row .set-label { flex: none; }
+.set-row > button {
+  min-height: 28px; padding: 2px 10px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-sm);
+  background: var(--card); color: var(--ink); font-weight: 700; cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .15);
+}
+.hue-dots { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+/* 色调选项：色样圆点 + 颜色名称的胶囊按钮。
+   颜色必须画在内层 .sw 上——设置弹窗对 button 有黑底 !important 规则，
+   给按钮本体上色会被盖成黑色；文字标签同时保证选项含义一目了然。 */
+.hue-dot {
+  display: inline-flex; align-items: center; gap: 6px;
+  flex: none !important;
+  width: auto !important; height: auto !important;
+  min-height: 26px; padding: 3px 10px 3px 7px;
+  border-radius: 999px; border: 1.5px solid var(--ink) !important;
+  box-shadow: none !important; cursor: pointer; font-size: .78rem;
+}
+.hue-dot .sw {
+  flex: none; width: 13px; height: 13px; border-radius: 50%;
+  border: 1px solid #ffffffa6; box-sizing: border-box;
+}
+.hue-dot.active { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* v14b：设置卡细节修正 */
+.project-card #new-project-btn { background: var(--lime) !important; color: var(--ink) !important; font-weight: 800 !important; }
+.project-card #manage-btn { background: var(--card) !important; color: var(--ink-soft) !important; }
+.project-card #save-btn { background: var(--card) !important; color: var(--ink) !important; }
+.set-row > button { min-height: 30px; }
+
+/* ==================== v16：设置弹窗两段式「配钥匙 → 接线」 ==================== */
+#settings-dialog .dialog-box { max-width: 720px !important; width: 720px; }
+.keys-step {
+  display: flex; align-items: baseline; gap: 8px;
+  margin: 14px 0 8px; font-weight: 800; color: var(--ink);
+}
+.keys-step b {
+  display: inline-grid; place-items: center; width: 22px; height: 22px;
+  background: var(--lime); border: 1.5px solid var(--ink); border-radius: 6px;
+  font-size: .8rem; box-shadow: 2px 2px 0 rgba(var(--ink-rgb), .25);
+}
+.keys-step span { font-weight: 400; font-size: .8rem; color: var(--ink-soft); }
+
+/* 服务商卡片：已配置收起，未配置展开 */
+.provider-list { display: flex; flex-direction: column; gap: 8px; }
+.provider-card {
+  border: 1.5px solid var(--ink); border-radius: 10px; background: var(--card, #fdfcf6);
+  box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .12); overflow: hidden;
+}
+.provider-card summary {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 10px 14px; font-size: .95rem; list-style: none;
+}
+.provider-card summary::-webkit-details-marker { display: none; }
+.provider-card summary b { flex: none; }
+.p-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1.5px solid var(--ink); }
+.p-dot.ok { background: var(--lime); }
+.p-dot.todo { background: transparent; border-style: dashed; }
+.p-format { flex: 1; font-size: .76rem; color: var(--ink-soft); font-weight: 400; }
+.provider-card .chip { font-size: .72rem; padding: 1px 8px; border-radius: 999px; border: 1.5px solid; }
+.provider-card .chip.ok { color: var(--ink); border-color: var(--lime-deep); background: var(--lime-soft); }
+.provider-card .chip.todo { color: #b0451b; border-color: #d9a08a; background: #fdf0e6; }
+.provider-body { padding: 4px 14px 12px; border-top: 1.5px dashed #d4d6c0; }
+.provider-body .set-field { display: block; margin: 10px 0 0; font-weight: 600; font-size: .88rem; }
+.provider-body .set-field input { width: 100%; margin-top: 4px; min-height: 38px; }
+.provider-body .set-field .hint { display: block; margin-top: 3px; font-weight: 400; font-size: .76rem; }
+.req { color: #b0451b; font-size: .72rem; font-weight: 800; }
+.opt { color: var(--ink-soft); font-size: .72rem; }
+
+/* 接线表：每环节一行，一屏看完 */
+.route-table {
+  border: 1.5px solid var(--ink); border-radius: 10px; background: var(--card, #fdfcf6);
+  box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .12); overflow: hidden;
+}
+.route-row {
+  display: flex; align-items: center; gap: 14px; padding: 10px 14px;
+  border-bottom: 1px dashed #d4d6c0;
+}
+.route-row:last-child { border-bottom: 0; }
+.route-name { flex: 1; font-weight: 700; font-size: .9rem; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.route-name .hint { font-weight: 400; font-size: .76rem; }
+.route-row select { min-height: 36px; min-width: 200px; font-weight: 600; }
+
+/* v16b：修正接线表被基础样式 select{width:100%} 挤压的问题 */
+.route-name { flex: 1 1 0; min-width: 0; }
+.route-row select { flex: none; width: 220px; min-width: 0; }
+
+/* v16c：自定义服务商 */
+.custom-add summary { color: var(--ink-soft); }
+.custom-add[open] summary { color: var(--ink); }
+#cp-add-btn {
+  min-height: 38px; padding: 4px 18px; border: 1.5px solid var(--ink); border-radius: 8px;
+  background: var(--lime); color: var(--ink); font-weight: 800; cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(var(--ink-rgb), .25);
+}
+
+/* ==================== 商务黑白模式（选「黑白」色调时 body.biz 生效） ==================== */
+/* 原则：白底、黑发字、黑色主按钮、1px 浅灰描边、去掉偏移硬阴影——主流商务软件的安全牌 */
+body.biz .topbar,
+body.biz .workflow-drawer,
+body.biz .panel .card,
+body.biz .project-card,
+body.biz .provider-card,
+body.biz .route-table,
+body.biz .dialog-box,
+body.biz .path-switch .path-tab,
+body.biz .templates button,
+body.biz .file-button,
+body.biz .secondary,
+body.biz .set-row > button,
+body.biz #cp-add-btn,
+body.biz .module-nav button {
+  box-shadow: none !important;
+}
+body.biz .topbar,
+body.biz .workflow-drawer,
+body.biz .panel .card,
+body.biz .project-card,
+body.biz .provider-card,
+body.biz .route-table,
+body.biz .dialog-box { border: 1px solid var(--line) !important; }
+body.biz input, body.biz textarea, body.biz select { border: 1px solid var(--line) !important; }
+body.biz input:focus, body.biz textarea:focus, body.biz select:focus {
+  border-color: #111 !important;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, .08) !important;
+}
+
+/* 主按钮：纯黑底白字，不再灰 */
+body.biz form.stack > button:not(.secondary),
+body.biz #save-rewritten,
+body.biz #person-submit, body.biz #voice-submit, body.biz #confirm-voice,
+body.biz #generate-video, body.biz #edit-submit, body.biz #ai-style-btn,
+body.biz .topbar .new-project-btn,
+body.biz .project-card #new-project-btn,
+body.biz .dialog-btn.primary,
+body.biz #cp-add-btn {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+body.biz form.stack > button:not(.secondary):hover,
+body.biz #save-rewritten:hover,
+body.biz #generate-video:hover, body.biz #edit-submit:hover, body.biz #ai-style-btn:hover,
+body.biz .topbar .new-project-btn:hover, body.biz .project-card #new-project-btn:hover,
+body.biz .dialog-btn.primary:hover, body.biz #cp-add-btn:hover {
+  background: #333 !important;
+  transform: none !important;
+}
+
+/* 高亮态：黑底白字（原「浅灰强调色+墨字」在黑白下会糊成一团） */
+body.biz .workspace-mode button.active { background: #111 !important; color: #fff !important; }
+body.biz .steps button.current { background: #111 !important; border-color: #111 !important; color: #fff !important; }
+body.biz .steps button.completed { border-color: #111 !important; color: #111 !important; background: #f1f1f1 !important; }
+body.biz .module-nav button.active { background: #111 !important; color: #fff !important; }
+body.biz .workflow-drawer button.active { background: #111 !important; color: #fff !important; }
+body.biz .workflow-drawer button.active span { color: #fff !important; }
+body.biz .section-kicker { background: #111 !important; color: #fff !important; }
+body.biz .panel h2:before { background: #111 !important; color: #fff !important; border-color: #111 !important; }
+body.biz .keys-step b { background: #111 !important; color: #fff !important; border-color: #111 !important; }
+body.biz .p-dot.ok { background: #111 !important; }
+body.biz .path-switch .path-tab.active { background: #111 !important; color: #fff !important; transform: none !important; }
+body.biz .settings-tab.active { background: #111 !important; color: #fff !important; border-color: #111 !important; }
+
+/* 悬停与浅底：用极浅灰而不是浅灰强调色 */
+body.biz .templates button:hover,
+body.biz .file-button:hover, body.biz .secondary:hover { background: #f1f1f1 !important; transform: none !important; }
+body.biz .workflow-drawer button:hover { background: #ececec !important; }
+body.biz .topbar strong:hover { background: #ececec !important; }
+
+/* ==================== v30：设置弹窗偏好面板 + 数据保存位置 ==================== */
+/* 全部走主题变量：黑白主题下这批卡片不再是绿色残留。 */
+#settings-dialog .settings-pane .group-card,
+#service-account-dialog .group-card {
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+  border-radius: 10px !important;
+}
+#settings-dialog .settings-pane .group-note,
+#service-account-dialog .group-note { color: var(--ink-soft) !important; }
+#settings-dialog .settings-intro { color: var(--ink-soft) !important; }
+
+/* 数据保存位置：路径输入框 + 迁移按钮同一行，输入框不得塌陷 */
+.data-location-row {
+  display: flex !important;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+#data-location-input {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-mid);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+}
+#data-location-input:focus {
+  border-color: var(--ink) !important;
+  box-shadow: 0 0 0 3px rgba(var(--lime-rgb), .35) !important;
+  outline: none;
+}
+#settings-dialog .data-location-row button {
+  width: auto !important;
+  flex: none;
+  min-height: 36px;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+}
+#data-location-choose { white-space: nowrap; }
+#data-location-reset { margin-top: 8px; }
+
+/* ==================== 商务黑白补丁：清掉绕过主题变量的硬编码绿色 ====================
+   以下元素在旧层里写死了橄榄绿/草绿，不随 applyHue 变化，
+   仅在选「黑白」色调（body.biz）时统一压成中性黑白灰。 */
+body.biz .save-btn.saved { color: #111 !important; border-color: #bdbdbd !important; background: #f1f1f1 !important; }
+body.biz .download { background: #111 !important; color: #fff !important; }
+body.biz .panel-state { background: #f1f1f1 !important; color: #111 !important; border-color: #bdbdbd !important; }
+body.biz .asset-summary span { background: #f4f4f4 !important; color: #666666 !important; }
+body.biz .workspace-mode button { color: #666666 !important; }
+body.biz .steps button { color: #666666 !important; }
+body.biz .path-switch .path-tab { background: #f6f6f6 !important; color: #444 !important; border-color: #d7d7d7 !important; }
+/* 一键成片的橙黄渐变在黑白主题下同样突兀，压成纯黑主按钮 */
+body.biz .auto-edit-btn { background: #111 !important; color: #fff !important; box-shadow: none !important; }
+body.biz .auto-edit-btn:hover { background: #333 !important; }
+
+/* 黑白主题的变量兜底与表单层。
+   studio.css / overrides.css 是早期视觉层，里面有少量橄榄色硬编码；
+   不能只覆盖按钮，否则占位符、嵌套表单与提示信息仍会显出旧色调。 */
+body.biz {
+  --paper: #f6f6f6;
+  --paper-2: #ececec;
+  --card: #ffffff;
+  --ink: #111111;
+  --ink-rgb: 17, 17, 17;
+  --ink-soft: #666666;
+  --muted: #666666;
+  --line: #d7d7d7;
+  --line-mid: #bdbdbd;
+  --wash: #f4f4f4;
+  --wash-2: #e9e9e9;
+  --lime: #e8e8e8;
+  --lime-deep: #8a8a8a;
+  --lime-soft: #f1f1f1;
+  --lime-rgb: 17, 17, 17;
+  --olive: #111111;
+  --olive-deep: #111111;
+  --soft-olive: #f1f1f1;
+}
+body.biz input,
+body.biz textarea,
+body.biz select,
+body.biz .file-control { background: #fff !important; color: #111 !important; }
+body.biz input::placeholder,
+body.biz textarea::placeholder { color: #888 !important; opacity: 1; }
+body.biz input[type="checkbox"],
+body.biz input[type="radio"],
+body.biz input[type="range"] { accent-color: #111; }
+body.biz fieldset,
+body.biz .voice-detail,
+body.biz .fish-controls,
+body.biz .edit-section,
+body.biz .compute-note,
+body.biz .preview-placeholder { background: #f4f4f4 !important; color: #666 !important; }
+body.biz .locked-note { border-color: #999 !important; background: #f1f1f1 !important; color: #444 !important; }
+body.biz .video-label,
+body.biz .timeline time,
+body.biz .ai-disclosure { background: #f1f1f1 !important; color: #555 !important; }

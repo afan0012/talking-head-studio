@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>afan Talking Head Agent</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20260901-15" />
+  <link rel="stylesheet" href="/static/overrides.css?v=20260902-4" />
+  <link rel="stylesheet" href="/static/studio.css?v=20260901" />
+  <link rel="stylesheet" href="/static/upgrade.css?v=33" />
+</head>
+<body>
+  <div class="app-shell">
+    <main>
+      <header class="topbar">
+        <div><p class="eyebrow">afan Talking Head Agent</p><strong id="project-name" title="点击修改项目名称">Untitled Project</strong></div>
+        <div class="topbar-right"><button id="save-btn" class="save-btn">保存</button><button id="new-project-btn" class="new-project-btn">＋ 新建</button><button id="manage-btn" class="manage-btn">项目记录</button><select id="project-switcher" class="project-switcher" aria-label="最近项目"><option value="">最近项目</option></select></div>
+      </header>
+
+      <div class="steps" aria-label="创作流程"><button type="button" data-panel-nav="1" class="current">① 文案创作</button><i>→</i><button type="button" data-panel-nav="2">② 人物与声音</button><i>→</i><button type="button" data-panel-nav="3">③ 视频生成</button><i>→</i><button type="button" data-panel-nav="4">④ 成片剪辑</button><i>→</i><button type="button" data-panel-nav="5">⑤ 包装与导出</button></div>
+      <p id="notice" class="notice"></p>
+
+      <div class="workbench-shell">
+        <aside class="workflow-drawer" aria-label="项目流程">
+          <p class="drawer-eyebrow">项目素材</p>
+          <div class="asset-summary"><span id="asset-person">人物视频 · 待添加</span><span id="asset-voice">声音样音 · 待选择</span><span id="asset-broll">B-roll · 可选</span></div>
+          <p class="drawer-eyebrow">创作流程</p>
+          <button type="button" data-panel-nav="1"><span>01</span> 文案创作</button>
+          <button type="button" data-panel-nav="2"><span>02</span> 人物与声音</button>
+          <button type="button" data-panel-nav="3"><span>03</span> 视频生成</button>
+          <button type="button" data-panel-nav="4"><span>04</span> 成片剪辑</button>
+          <button type="button" data-panel-nav="5"><span>05</span> 包装与导出</button>
+        </aside>
+
+        <div class="studio">
+          <section data-panel="1" class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">SCRIPT</p><h1>先得到一份可确认的口播稿</h1></div><span class="panel-state">两种创作路径</span></div>
+            <div class="path-switch" role="tablist" aria-label="创作路径">
+              <button type="button" class="path-tab active" data-script-path="direct" role="tab" aria-selected="true">直接文案创作</button>
+              <button type="button" class="path-tab" data-script-path="rewrite" role="tab" aria-selected="false">根据本地视频改写</button>
+            </div>
+            <div class="path-grid">
+              <div class="card path-card" data-path="direct">
+                <div class="split-heading"><h2>文案创作</h2><span class="card-status">路径 A</span></div>
+                <p class="hint">描述主题、受众和语气，由 AI 生成一版可编辑文案。</p>
+                  <div class="templates ai-script-templates"><button type="button" data-ai-template="为一款面向新手卖家的跨境电商工具写 60 秒口播。受众是想入门 TikTok 的小商家；语气专业、易懂；强调低成本起步。">跨境带货</button><button type="button" data-ai-template="写一条 45 秒知识口播：解释为什么普通人应先建立应急储蓄，再考虑投资。受众是刚工作的年轻人；语气真诚、通俗。">知识科普</button><button type="button" data-ai-template="为一家本地咖啡店写 30 秒探店口播。突出环境、招牌产品和适合约会或办公；语气轻松有画面感。">本地探店</button></div>
+                  <form id="ai-script-form" class="stack"><label>文案需求<textarea id="ai-prompt" name="prompt" rows="7" placeholder="例如：为在线英语陪练产品写 60 秒口播，受众是职场新人；开头有痛点，语气轻松可信，不虚构数据。" required></textarea></label><p class="hint">使用“设置 → 模型分配”中为文案创作指定的模型。</p><button>生成口播稿</button></form>
+              </div>
+
+              <div class="card path-card hidden" data-path="rewrite">
+                <div class="split-heading"><h2>从参考视频改写</h2><span class="card-status">路径 B</span></div>
+                <p class="hint">上传你已保存到本地的参考视频，自动提取文案并生成一版可编辑的原创改写稿。</p>
+                <form id="extract-form" class="stack" onsubmit="window._doExtract(event)">
+                  <label>上传本地视频<span class="file-control"><button class="file-button" type="button" data-file-target="reference-file">选择本地视频</button><span id="reference-file-name" class="file-name">未选择文件</span><input id="reference-file" name="reference_video" type="file" accept="video/*" /></span></label>
+                  <label class="check"><input name="reference_content_authorized" type="checkbox" required />我确认拥有该内容，或已取得改写和使用所需的授权</label>
+                  <label>改写要求<textarea name="instruction" rows="3">改写为自然、通顺、可直接朗读的原创口播表达。</textarea></label>
+                  <p class="hint">改写将使用“设置 → 模型分配”中的指定模型。</p>
+                  <button>开始改写</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="card script-result-card">
+              <div class="split-heading"><h2>确认口播稿</h2><span class="chip">可编辑</span></div>
+              <div class="script-result stack"><label>生成或改写后，在这里完成最后修改<textarea id="rewritten" rows="9" placeholder="文案会显示在这里"></textarea></label><button id="retry-rewrite" class="secondary hidden" type="button">重新改写参考文案</button><button id="save-rewritten" class="secondary">确认文案，进入人物与声音</button></div>
+            </div>
+          </section>
+
+          <section data-panel="2" class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">ASSETS & VOICE</p><h1>准备人物素材并确认声音</h1></div><span class="panel-state">两个独立步骤</span></div>
+            <div class="two-column">
+              <div class="card">
+                <div class="split-heading"><h2>人物视频</h2><span id="person-ready" class="card-status">等待上传</span></div>
+                <p class="hint">上传将被改口型的人物视频。配音声音请在下一步「声音试听」中选择来源。</p>
+                <form id="person-form" class="stack"><label>人物视频<span class="file-control"><button class="file-button" type="button" data-file-target="person-file">选择人物视频</button><span id="person-file-name" class="file-name">未选择文件</span><input id="person-file" name="video" type="file" accept="video/mp4,video/quicktime,video/*" required /></span></label><label class="check"><input name="consent" type="checkbox" required />我确认拥有该人物肖像的使用授权（用于改口型）</label><p id="person-lock" class="locked-note">请先创建并确认文案</p><button id="person-submit">检测人物视频</button></form>
+                <div id="person-output" class="hidden"><video id="person-video" controls></video><div class="metrics"><span id="person-duration"></span><span id="person-status"></span></div><div id="person-risks" class="risks"></div></div>
+              </div>
+
+              <div class="card">
+                <div class="split-heading"><h2>声音试听</h2><span class="card-status">确认后进入视频生成</span></div>
+                <form id="voice-form" class="stack">
+                  <fieldset><legend>音色来源</legend>
+                    <label class="radio"><input type="radio" name="mode" value="upload" checked />上传新的声音样音</label>
+                    <label id="voice-upload-detail" class="voice-detail hidden">声音样音（建议单人、清晰、自然口播；Qwen3-TTS/CosyVoice 建议 10–20 秒，最长 60 秒）<span class="file-control"><button class="file-button" type="button" data-file-target="voice-sample">选择样音</button><span id="voice-sample-file-name" class="file-name">未选择文件</span><input id="voice-sample" name="sample" type="file" accept="audio/*" /></span></label>
+                    <label class="radio"><input type="radio" name="mode" value="saved" />使用已保存音色</label>
+                    <label id="voice-saved-detail" class="voice-detail hidden">已注册的 voiceId（阿里云 CosyVoice）<input name="voice_id" placeholder="输入已创建的 voiceId，如 cosyvoice-v3.5-plus-xxxx" /></label>
+                    <label class="radio"><input type="radio" name="mode" value="direct" />使用云端标准音色配音</label>
+                    <label id="direct-tts-voice-detail" class="voice-detail hidden">标准音色<select name="direct_tts_voice"><option value="longanlingxin">龙安灵心（百炼）</option><option value="冰糖">冰糖（MiMo）</option></select></label>
+                  </fieldset>
+                  <label id="voice-consent-wrap" class="check"><input id="voice-consent" name="voice_consent" type="checkbox" required />我确认拥有所上传或使用的声音样音授权</label>
+                  <p class="hint">标准音色来自云端 TTS 模型，不是电脑系统朗读；请选择上面的音色。声音复刻与配音模型可在“设置 → 模型分配”中调整。</p>
+                  <p id="qwen-vc-note" class="hint hidden">Qwen3-TTS 复刻当前使用官方默认合成参数，以优先保证音色相似度；语速、音高和情绪控制暂未开放。</p>
+                  <details id="qwen-controls" class="fish-controls hidden" open><summary>Qwen3-TTS 控制面板</summary><div class="stack fish-controls-inner">
+                    <label>发音语言<select name="qwen_voice_lang"><option value="auto" selected>自动识别</option><option value="zh">中文</option><option value="en">英文</option><option value="de">德语</option><option value="it">意大利语</option><option value="pt">葡萄牙语</option><option value="es">西班牙语</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="ru">俄语</option></select></label>
+                    <p class="hint">Qwen3-TTS 会根据文本自动调整自然语气；当前复刻接口可可靠控制发音语言，语速、音高和情绪参数不对该模型开放。</p>
+                  </div></details>
+                  
+                  <div id="legacy-voice-controls" class="controls"><label>语速<select name="speed"><option value="slow">慢</option><option value="standard" selected>标准</option><option value="fast">快</option></select></label><label>情绪<select name="emotion"><option value="natural">自然</option><option value="warm">热情</option><option value="steady">沉稳</option></select></label></div>
+                  <details id="cosy-controls" class="fish-controls hidden" open><summary>阿里云 CosyVoice 精细控制</summary><div class="stack fish-controls-inner">
+                    <label>表达指令（可选，≤100 字符；控制情感、语气、角色，如“用轻快带笑意的语气，像朋友分享好物”）<textarea name="voice_instruction" rows="3" maxlength="200" placeholder="留空则使用上方语速/情绪的默认口播风格。官方支持任意自然语言指令，例如：请用激昂高亢的语气说话；请用气声低语；请模拟温柔的长辈。"></textarea></label>
+                    <div class="templates fish-style-templates">
+                      <button type="button" data-voice-instruction="像朋友发现好物后顺口分享，轻快自然，带一点笑意，重点自然突出。">轻快分享</button>
+                      <button type="button" data-voice-instruction="像专业新闻播音员一样冷静客观、字正腔圆，情绪保持中立。">新闻播报</button>
+                      <button type="button" data-voice-instruction="语气沉稳从容，吐字清晰有条理，像资深讲师讲解重点内容。">沉稳讲解</button>
+                      <button type="button" data-voice-instruction="语气充满活力与朝气，节奏明快，有感染力，适合带货促销。">活力带货</button>
+                      <button type="button" data-voice-instruction="用气声轻柔地说，像在耳边亲密低语，营造神秘氛围。">耳边低语</button>
+                      <button type="button" data-voice-instruction="">恢复默认口播风格</button>
+                    </div>
+                    <div class="controls">
+                      <label>语速<input name="voice_rate" type="number" min="0.5" max="2" step="0.05" value="1.00" /></label>
+                      <label>音量<input name="voice_volume" type="number" min="0" max="100" step="1" value="50" /></label>
+                      <label>音高<input name="voice_pitch" type="number" min="0.5" max="2" step="0.05" value="1.00" /></label>
+                    </div>
+                    <div class="controls">
+                      <label>发音语言<select name="voice_lang"><option value="auto" selected>自动</option><option value="zh">中文</option><option value="en">英文</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="ru">俄语</option><option value="pt">葡语</option><option value="th">泰语</option><option value="id">印尼语</option><option value="vi">越南语</option></select></label>
+                      <label>随机种子<input name="voice_seed" type="number" min="0" max="65535" step="1" value="0" /></label>
+                    </div>
+                    <p class="hint">语速/音量/音高为官方数值参数；表达指令为官方 instruction 功能（限 100 字符，汉字按 2 字符计）；种子非 0 时相同参数可复现相同结果。</p>
+                  </div></details>
+                  
+                  <details id="mimo-controls" class="fish-controls hidden" open><summary>MiMo 精细控制</summary><div class="stack fish-controls-inner">
+                    <label>表达指令（MiMo 用自然语言指令控制语气与表达；留空时按左侧情绪档位生成）<textarea name="mimo_style" rows="3" maxlength="800" placeholder="例如：保持参考音频本人的音色与发声习惯。像本人面对镜头分享真实发现，语气平实自然，句间有思考停顿；不要播音腔，不要夸张表演。"></textarea></label>
+                    <div class="templates fish-style-templates">
+                      <button type="button" data-mimo-style="保持参考音频本人的音色与发声习惯。像本人面对镜头分享真实发现，语气平实自然，句间有思考停顿；不要播音腔，不要夸张表演。">本人自然口播</button>
+                      <button type="button" data-mimo-style="保持参考音频本人的音色与发声习惯。像朋友发现好物后顺口分享，轻快带一点笑意，重点自然突出。">轻快分享</button>
+                      <button type="button" data-mimo-style="保持参考音频本人的音色与发声习惯。像资深讲师一样沉稳清晰、有条理地讲解，重点自然重读。">沉稳讲解</button>
+                      <button type="button" data-mimo-style="保持参考音频本人的音色与发声习惯。语气充满活力与朝气，节奏明快，有感染力，适合带货促销。">活力带货</button>
+                      <button type="button" data-mimo-style="">恢复情绪档位默认</button>
+                    </div>
+                    <p class="hint">MiMo 每次合成都用样音做一次性复刻，官方没有可复用的 voice_id，也没有数值语速/音调参数；表达全部通过自然语言指令控制。上方情绪档位在指令留空时生效。</p>
+                  </div></details>
+                  <p id="voice-lock" class="locked-note">请先确认文案并准备声音来源</p><button id="voice-submit">生成试听</button>
+                </form>
+                <div id="voice-output" class="hidden"><audio id="voice-audio" controls></audio><p id="voice-quality-note" class="hint hidden"></p><button id="confirm-voice" class="secondary">确认试听</button></div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="3" class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">VIDEO</p><h1>生成并检查改口型结果</h1></div><span id="duration-chip" class="panel-state">等待试听</span></div>
+            <div class="card video-generation-card">
+              <div class="split-heading"><h2>视频生成</h2><span class="card-status">生成前确认算力策略</span></div>
+              <p id="video-stage" class="hint">请先确认声音试听。</p>
+              <fieldset><legend>视频时长处理</legend><label class="radio"><input type="radio" name="duration_strategy" value="keep_video" checked />匹配：人物视频与配音时长基本一致</label><label class="radio"><input type="radio" name="duration_strategy" value="trim_tail" />经济：配音较短时裁掉人物视频尾部</label></fieldset>
+              <details class="compute-note"><summary>如何准备人物视频？</summary><p>建议拍摄一段足够长、动作稳定的人物视频。配音较短时会裁掉视频尾部；配音较长时不会强行裁切或循环，需重新生成较短配音或重新拍摄更长视频。</p></details>
+              <p class="hint">改口型模型可在“设置 → 模型分配”中调整。</p><p id="video-lock" class="locked-note">请先确认声音试听</p><button id="generate-video">生成改口型视频</button><button id="cancel-video" class="secondary hidden" type="button">取消本次生成</button>
+              <div id="result-placeholder" class="preview-placeholder">完成生成后，无字幕改口型结果会显示在这里</div><p class="video-label">改口型结果（无字幕、标题和音乐）</p><video id="result-video" class="hidden" controls></video>
+            </div>
+          </section>
+
+          <section data-panel="4" class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">EDIT</p><h1>调整节奏并加入自有素材</h1></div><span class="panel-state">基础成片剪辑</span></div>
+            <div class="card">
+              <div class="split-heading"><h2>成片剪辑</h2><span class="chip">不会改动原始结果</span></div>
+              <button id="auto-edit-btn" class="ai-style-btn auto-edit-btn" type="button">✨ AI 一键成片（自动包装并导出）</button>
+              <form id="edit-form" class="stack">
+                <details class="edit-section" open><summary>B-roll 插片（支持多段）</summary><div class="stack edit-inner">
+                  <label class="check"><input name="broll_enabled" type="checkbox" />在指定时间用 B-roll 替换人物画面，保留原人声</label>
+                  <label>本地授权素材<span class="file-control"><button class="file-button" type="button" data-file-target="broll">添加 B-roll 素材</button><span id="broll-file-name" class="file-name">未选择文件</span><input id="broll" type="file" accept="video/*,image/*" multiple /></span></label>
+                  <div id="broll-clips-list" class="stack"></div>
+                  <p class="hint">点击每段按钮打开编辑窗口。支持 MP4、MOV、WebM 视频，以及 PNG、JPG、WEBP、GIF 图片；图片可设置持续时间，视频使用原始时长。</p>
+                </div></details>
+                <details class="edit-section"><summary>背景音乐</summary><div class="stack edit-inner"><div id="music-current" class="hint hidden"></div><label>音乐文件<span class="file-control"><button class="file-button" type="button" data-file-target="music">选择音乐</button><span id="music-file-name" class="file-name">未选择文件</span><input id="music" type="file" accept="audio/*" /></span></label><label>音量<input name="music_volume" type="range" min="0.02" max="0.5" step="0.01" value="0.14" /><span class="vol-hint">14%</span></label></div></details>
+              </form>
+              <p class="hint">剪辑参数会在下一步与字幕、标题和封面一起合成。</p>
+            </div>
+          </section>
+
+          <section data-panel="5" class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">PACKAGE</p><h1>设置字幕与封面并导出</h1></div><span class="panel-state">最后一步</span></div>
+            <div class="card">
+              <div class="split-heading"><h2>包装与导出</h2><span class="chip">导出前可修改</span></div>
+              <div class="package-grid">
+                <details class="edit-section" open><summary>标题</summary><div class="stack edit-inner"><label>标题文字<input form="edit-form" name="title" maxlength="80" placeholder="例如：3 个让产品更好卖的技巧" /></label><div class="controls"><label>字号<select form="edit-form" name="title_font_size"><option value="h/24">小</option><option value="h/18" selected>中</option><option value="h/14">大</option></select></label><label>颜色<select form="edit-form" name="title_color"><option value="white" selected>白</option><option value="yellow">黄</option><option value="#FF6B6B">红</option><option value="#4ECDC4">青</option><option value="black">黑</option></select></label><label>位置<select form="edit-form" name="title_position"><option value="top" selected>顶部</option><option value="center">居中</option><option value="bottom">底部</option></select></label></div></div></details>
+                <details class="edit-section" open><summary>字幕</summary><div class="stack edit-inner"><label class="check"><input form="edit-form" name="subtitle_enabled" type="checkbox" checked />烧录自动分段字幕</label><div class="controls"><label>字号<select form="edit-form" name="subtitle_font_size"><option value="32">中</option><option value="42" selected>大</option><option value="52">特大</option><option value="64">超大</option></select></label><label>颜色<select form="edit-form" name="subtitle_color"><option value="FFFFFF" selected>白</option><option value="FFFF00">黄</option><option value="FF6B6B">红</option><option value="4ECDC4">青</option></select></label><label>底部边距<input form="edit-form" name="subtitle_margin_v" type="number" min="0" max="200" value="72" /></label></div><label>高亮关键词<input form="edit-form" name="subtitle_keywords" placeholder="逗号分隔；留空则不染色" /></label><label>高亮颜色<select form="edit-form" name="subtitle_keyword_color"><option value="FFFF00" selected>黄</option><option value="FFFFFF">白</option><option value="FF6B6B">红</option><option value="4ECDC4">青</option></select></label></div></details>
+                <details class="edit-section"><summary>封面</summary><div class="stack edit-inner"><label>自定义封面（可选）<span class="file-control"><button class="file-button" type="button" data-file-target="cover">选择封面</button><span id="cover-file-name" class="file-name">未选择文件</span><input id="cover" form="edit-form" type="file" accept="image/*" /></span></label></div></details>
+              </div>
+              <p class="ai-disclosure">本视频含 AI 口型/声音编辑；发布时请按目标平台规则操作，并确认已取得人物肖像和声音授权。</p>
+              <p class="video-label" id="final-label">最终成片预览</p><div id="edit-output" class="hidden"><video id="final-video" controls></video><img id="cover-image" alt="视频封面" /><p><a id="download" class="download">下载 MP4</a></p></div>
+              <p id="edit-lock" class="locked-note">请先生成改口型视频</p><button id="edit-submit" type="submit" form="edit-form">生成并导出成片</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <style>
+    .settings-tabs{display:flex;gap:8px;margin:12px 0 14px}
+    .settings-tab{flex:1;padding:9px 0;border-radius:8px;border:1px solid #cdd6c2;background:#eef0e8;color:#5c6b54;font-weight:800;cursor:pointer}
+    .settings-tab.active{background:var(--olive,#6b7f4d);color:#fff;border-color:var(--olive-deep,#55663c)}
+    .settings-pane .group-card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:var(--card)}
+    .settings-pane .group-title{font-weight:800;margin:0 0 2px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .settings-pane .group-note{font-size:.78rem;color:var(--ink-soft);margin:0 0 10px}
+    .settings-pane .group-card label{display:block;margin:8px 0}
+    .provider-pick{font-weight:600;font-size:.8rem;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+    .provider-pick select{padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--card);max-width:190px}
+    /* 弹窗不超过一屏：标题和底部按钮固定，中间内容可滚动 */
+    #settings-dialog.dialog-overlay{padding:20px}
+    #settings-dialog .dialog-box{display:flex;flex-direction:column;max-height:min(88vh,860px);overflow:hidden;text-align:left}
+    #settings-dialog .split-heading{flex:none}
+    #settings-dialog .settings-body{flex:1;min-height:0;overflow-y:auto;padding-right:8px;scrollbar-width:thin}
+    #settings-dialog .dialog-actions{flex:none;margin:14px 0 0}
+    #settings-dialog #settings-status{flex:none;margin:8px 0 0}
+    .settings-intro{margin:2px 0 14px;color:var(--ink-soft);line-height:1.55}
+    .settings-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
+    .settings-section-title h4{margin:0;font-size:1rem}
+    .account-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #dbe3d0;border-radius:10px;background:#fbfcf8;margin:8px 0}
+    .account-summary b{display:block}.account-summary .hint{margin:3px 0 0}
+    .service-manager{display:grid;grid-template-columns:minmax(180px,.62fr) minmax(0,1.38fr);gap:12px;min-height:330px}
+    .service-list{display:flex;flex-direction:column;gap:7px;border-right:1px solid #dde5d5;padding-right:12px}
+    .service-list button{text-align:left;background:#fbfcf8;color:#314025;border:1px solid #dbe3d0;padding:10px 11px;border-radius:9px}
+    .service-list button.active{background:#e6f4bd;border-color:#809b42}
+    .service-detail{border:1px solid #dbe3d0;border-radius:10px;padding:14px;background:#fbfcf8}
+    .service-detail h4{margin:0 0 4px}.service-detail .hint{margin:5px 0}
+    .capability-row{padding:10px 0;border-top:1px solid #e1e8d9}.capability-row:first-of-type{border-top:0}
+    .capability-row b{display:block}.capability-row .chip{display:inline-block;margin-top:5px}
+    .wizard-progress{display:flex;gap:8px;margin:4px 0 16px}.wizard-progress span{flex:1;text-align:center;padding:6px;border-radius:99px;background:#edf0e7;color:#71806a;font-size:.78rem;font-weight:800}.wizard-progress span.active{background:#789346;color:#fff}
+    .service-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.service-type-grid button{min-height:100px;text-align:left;background:#fbfcf8;color:#314025;border:1px solid #dbe3d0;padding:12px;border-radius:10px}.service-type-grid button.active{border-color:#789346;background:#eef7d4}.service-type-grid b{display:block;margin-bottom:6px}
+    .wizard-actions{display:flex;justify-content:space-between;gap:10px;margin-top:16px}
+    @media (max-width:640px){.settings-tabs{gap:5px}.settings-tab{font-size:.78rem;padding:8px 3px}.service-manager{grid-template-columns:1fr}.service-list{border-right:0;border-bottom:1px solid #dde5d5;padding:0 0 10px}.service-type-grid{grid-template-columns:1fr}}
+    /* Settings uses the global hue variables, but deliberately has a quieter,
+       denser layout than the creation canvas.  Default hue is sky blue. */
+    #settings-dialog,#service-account-dialog{--set-accent:var(--lime,#8ecdf5);--set-deep:var(--lime-deep,#5aaee8);--set-soft:var(--lime-soft,#e6f3fd);--set-ink:#172b44;--set-muted:#63758c;--set-line:#d8e1ec}
+    #settings-dialog .dialog-box,#service-account-dialog .dialog-box{width:min(920px,calc(100vw - 32px))!important;max-width:920px!important;background:#fff!important;border:1px solid var(--set-line)!important;border-radius:14px!important;box-shadow:0 20px 56px rgba(20,52,86,.16)!important;padding:22px 24px!important}
+    #settings-dialog h3,#service-account-dialog h3{margin:0;font-size:20px!important;color:var(--set-ink)!important;letter-spacing:0}
+    #settings-dialog .settings-tabs{gap:4px;margin:14px 0 18px;border-bottom:1px solid var(--set-line);padding-bottom:8px}
+    #settings-dialog .settings-tab{flex:0 0 auto;padding:8px 12px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--set-muted)!important;font-size:13px!important;font-weight:650!important;box-shadow:none!important}
+    #settings-dialog .settings-tab.active{background:var(--set-soft)!important;color:#176aa7!important}
+    #settings-dialog .settings-intro{font-size:13px!important;color:var(--set-muted)!important;margin:0 0 14px;line-height:1.65}
+    #settings-dialog .settings-intro b{color:var(--set-ink)}
+    #settings-dialog .provider-list{gap:8px}
+    #settings-dialog .settings-provider{border:1px solid var(--set-line);border-radius:10px;background:#fff;overflow:hidden}
+    #settings-dialog .settings-provider summary{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;list-style:none}
+    #settings-dialog .settings-provider summary::-webkit-details-marker{display:none}
+    #settings-dialog .settings-provider summary>span:nth-child(2){display:grid;gap:2px;flex:1}
+    #settings-dialog .settings-provider summary b{font-size:14px;color:var(--set-ink)}
+    #settings-dialog .settings-provider summary small{font-size:12px;color:var(--set-muted);font-weight:400}
+    #settings-dialog .provider-status{width:8px;height:8px;border-radius:50%;background:#c7d2df}.provider-status.ready{background:var(--set-deep)}
+    #settings-dialog .settings-state{font-size:12px;padding:3px 7px;border-radius:999px;background:#f2f5f8;color:var(--set-muted)}
+    #settings-dialog .settings-state.ready{background:var(--set-soft);color:#176aa7}
+    #settings-dialog .settings-provider-body{padding:0 13px 13px;border-top:1px solid #edf1f5}
+    #settings-dialog .credential-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+    #settings-dialog .set-field{font-size:13px!important;font-weight:600!important;color:var(--set-ink)!important}
+    #settings-dialog .set-field input{margin-top:5px;padding:8px 9px!important;min-height:36px!important;border:1px solid var(--set-line)!important;border-radius:7px!important;font-size:13px!important;background:#fff!important}
+    #settings-dialog .set-field .hint{font-size:12px!important;color:var(--set-muted)!important;line-height:1.45}
+    #settings-dialog .model-inventory{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--set-line)}
+    #settings-dialog .model-inventory span{font-size:12px;color:var(--set-muted);margin-right:2px}
+    #settings-dialog .model-inventory i{font-style:normal;font-size:11px;color:#35607e;background:#f3f7fb;border:1px solid #e0eaf2;border-radius:5px;padding:3px 6px}
+    #settings-dialog .model-inventory.compact{margin-top:7px;padding-top:0;border-top:0}
+    #settings-dialog .settings-section-title{margin:18px 0 8px}#settings-dialog .settings-section-title h4{font-size:14px;color:var(--set-ink)}
+    #settings-dialog .settings-section-title button,#settings-dialog .account-summary button,#settings-dialog .wizard-actions button{width:auto!important;padding:7px 11px!important;min-height:34px!important;border-radius:7px!important;background:var(--set-deep)!important;color:#fff!important;border:0!important;font-size:13px!important;box-shadow:none!important}
+    #settings-dialog .account-summary{border:1px solid var(--set-line)!important;border-radius:9px!important;background:#fff!important;padding:11px 13px!important;margin:7px 0!important}
+    #settings-dialog .account-summary b{font-size:14px;color:var(--set-ink)}#settings-dialog .account-summary .hint{font-size:12px!important;color:var(--set-muted)!important}
+    #settings-dialog .model-route-table{border:1px solid var(--set-line);border-radius:10px;overflow:hidden;background:#fff}
+    #settings-dialog .model-route-row{display:grid;grid-template-columns:minmax(190px,1fr) minmax(260px,1.15fr);gap:16px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf1f5}
+    #settings-dialog .model-route-row:last-child{border-bottom:0}#settings-dialog .model-route-row b{display:block;font-size:13px;color:var(--set-ink)}#settings-dialog .model-route-row span{display:block;margin-top:3px;font-size:11px;color:var(--set-muted)}
+    #settings-dialog .model-route-row select{padding:8px 9px!important;border:1px solid var(--set-line)!important;border-radius:7px!important;background:#fff!important;color:var(--set-ink)!important;font-size:13px!important}
+    #settings-dialog .dialog-actions{justify-content:flex-end!important;border-top:1px solid var(--set-line);padding-top:13px;margin-top:14px!important}
+    #settings-dialog .dialog-btn.primary{background:var(--set-deep)!important;border:0!important;color:#fff!important;box-shadow:none!important;font-size:13px!important}
+    #settings-dialog .dialog-btn.secondary{background:#f4f7fa!important;border:1px solid var(--set-line)!important;color:var(--set-ink)!important;font-size:13px!important}
+    #settings-dialog #settings-status{font-size:12px!important;color:var(--set-muted)!important}
+    @media(max-width:640px){#settings-dialog .credential-grid,#settings-dialog .model-route-row{grid-template-columns:1fr}#settings-dialog .settings-tabs{overflow:auto;white-space:nowrap}}
+    /* Final settings surface: neutral black, white and gray only.  The tabs
+       remain visible while the account list scrolls. */
+    #settings-dialog,#service-account-dialog{--set-accent:#111;--set-deep:#111;--set-soft:#f1f1f1;--set-ink:#111;--set-muted:#666;--set-line:#d7d7d7}
+    #settings-dialog .dialog-box,#service-account-dialog .dialog-box{background:#fff!important;border-color:#cfcfcf!important;box-shadow:0 16px 44px rgba(0,0,0,.16)!important}
+    #settings-dialog .settings-body{position:relative;padding-right:0!important}
+    #settings-dialog .settings-tabs{position:sticky;top:0;z-index:5;margin:0 -1px 16px!important;padding:10px 0 9px!important;background:#fff!important;border-color:#d7d7d7!important}
+    #settings-dialog .settings-tab.active{background:#111!important;color:#fff!important}
+    #settings-dialog .settings-tab{width:auto!important;color:#444!important}
+    #settings-dialog .provider-status.ready{background:#111!important}.provider-status{background:#ccc!important}
+    #settings-dialog .settings-state.ready{background:#111!important;color:#fff!important}#settings-dialog .settings-state{background:#f2f2f2!important;color:#555!important}
+    #settings-dialog .model-inventory i{color:#333!important;background:#f4f4f4!important;border-color:#dedede!important}
+    #settings-dialog .settings-section-title button,#settings-dialog .account-summary button,#settings-dialog .wizard-actions button,#settings-dialog .dialog-btn.primary{background:#111!important;color:#fff!important}
+    #settings-dialog .dialog-btn.secondary{background:#fff!important;color:#111!important;border-color:#bbb!important}
+    #settings-dialog .model-route-row select:focus,#settings-dialog .set-field input:focus{border-color:#111!important;box-shadow:0 0 0 1px #111!important}
+    #settings-dialog .settings-provider,#settings-dialog .account-summary,#settings-dialog .model-route-table{border-color:#d7d7d7!important;box-shadow:none!important}
+    #settings-dialog .settings-intro,#settings-dialog .hint,#settings-dialog #settings-status{color:#666!important}
+    #settings-dialog button{width:auto!important;background:#111!important;color:#fff!important;border-color:#111!important;box-shadow:none!important}
+    #settings-dialog button.secondary,#settings-dialog .dialog-close{background:#fff!important;color:#111!important;border:1px solid #bbb!important}
+    /* v17：修排版泄漏与层级。
+       styles.css 的 .dialog-box p{.92rem/800} 是给确认弹窗正文用的，
+       会泄漏进设置弹窗把所有 hint/正文段落放大加粗，这里统一压回。 */
+    #settings-dialog .dialog-box p,#service-account-dialog .dialog-box p{font-size:13px;font-weight:400;line-height:1.6}
+    #settings-dialog p.hint,#service-account-dialog p.hint{font-size:12px!important;font-weight:400!important;margin:8px 0 0}
+    #service-account-dialog .set-field{font-size:13px;font-weight:600;color:#111}
+    #service-account-dialog .set-field input{margin-top:5px;padding:8px 9px!important;min-height:36px!important;border:1px solid #d7d7d7!important;border-radius:7px!important;font-size:13px!important;background:#fff!important}
+    #settings-dialog .dialog-box button,#service-account-dialog .dialog-box button{font-weight:700}
+    #settings-dialog .settings-provider-body button{min-height:34px;padding:7px 13px!important;font-size:13px}
+    #settings-dialog .settings-section-title h4{font-size:15px}
+    #settings-dialog .account-summary.empty{border-style:dashed!important}
+    #settings-dialog .settings-body{overflow-x:hidden}
+    #service-account-dialog .dialog-box button{width:auto!important;min-height:34px;background:#111!important;color:#fff!important;border:0!important;box-shadow:none!important;font-size:13px}
+    #service-account-dialog .dialog-box button.secondary,#service-account-dialog .dialog-box .dialog-close{background:#fff!important;color:#111!important;border:1px solid #bbb!important}
+    #service-account-dialog .service-type-grid button{background:#fff!important;border:1px solid #d7d7d7!important;color:#111!important}
+    #service-account-dialog .service-type-grid button.active{background:#111!important;border-color:#111!important;color:#fff!important}
+    #service-account-dialog .wizard-progress span{background:#f2f2f2!important;color:#555!important}
+    #service-account-dialog .wizard-progress span.active{background:#111!important;color:#fff!important}
+    /* Settings is a two-level desktop navigation: global sections at left,
+       then providers and their details side by side within the key section. */
+    #settings-dialog .dialog-box{width:min(1080px,calc(100vw - 32px))!important;max-width:1080px!important}
+    #settings-dialog .settings-shell{display:grid;grid-template-columns:156px minmax(0,1fr);flex:1;min-height:0;margin-top:14px}
+    #settings-dialog .settings-tabs{position:static;display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:0!important;padding:0 14px 0 0!important;border:0!important;border-right:1px solid #d7d7d7!important;background:transparent!important}
+    #settings-dialog .settings-tab{width:100%!important;text-align:left;padding:10px 11px!important;border-radius:7px!important}
+    #settings-dialog .settings-body{min-width:0;min-height:0;overflow-y:auto;padding:0 0 0 20px!important}
+    #settings-dialog .key-workspace{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:440px;border:1px solid #d7d7d7;border-radius:10px;overflow:hidden;background:#fff}
+    #settings-dialog .key-provider-list{display:flex;flex-direction:column;gap:3px;padding:8px;border-right:1px solid #d7d7d7;background:#fafafa;overflow-y:auto}
+    #settings-dialog .key-provider-list button{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%!important;padding:9px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#111!important;text-align:left}
+    #settings-dialog .key-provider-list button:hover{background:#f0f0f0!important}
+    #settings-dialog .key-provider-list button.active{background:#111!important;color:#fff!important}
+    #settings-dialog .key-provider-list button.active .provider-status{background:#fff!important}
+    #settings-dialog .key-provider-list button>span:nth-child(2){display:grid;gap:2px;min-width:0}
+    #settings-dialog .key-provider-list b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #settings-dialog .key-provider-list small{font-size:11px;font-weight:400;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #settings-dialog .key-provider-list button.active small{color:#d9d9d9}
+    #settings-dialog .key-provider-list em{font-size:10px;font-style:normal;white-space:nowrap;color:#777}
+    #settings-dialog .key-provider-list button.active em{color:#fff}
+    #settings-dialog .key-provider-list .add-provider{display:block;margin-top:auto;border-top:1px solid #d7d7d7!important;border-radius:0!important;padding:12px 9px 5px!important;color:#444!important;font-size:12px}
+    #settings-dialog .key-provider-detail{min-width:0;padding:20px 22px;overflow-y:auto}
+    #settings-dialog .key-detail-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding-bottom:17px;border-bottom:1px solid #e5e5e5}
+    #settings-dialog .key-detail-heading .eyebrow{display:block;margin:0 0 5px;color:#777;font-size:11px;letter-spacing:.06em}
+    #settings-dialog .key-detail-heading h4{margin:0;color:#111;font-size:18px}
+    #settings-dialog .key-detail-heading p{margin:4px 0 0;color:#666;font-size:12px;font-weight:400}
+    #settings-dialog .key-detail-section{padding:17px 0;border-bottom:1px solid #e5e5e5}
+    #settings-dialog .key-detail-section h5{margin:0 0 10px;font-size:13px;color:#111}
+    #settings-dialog .key-detail-section .model-inventory{margin-top:9px}
+    #settings-dialog .inline-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+    #settings-dialog .inline-actions button{padding:7px 11px!important;min-height:34px!important}
+    #settings-dialog .key-provider-detail .capability-row .chip{display:inline-block;margin-top:6px}
+    @media(max-width:720px){#settings-dialog .settings-shell{grid-template-columns:1fr}.settings-tabs{flex-direction:row!important;overflow-x:auto;padding:0 0 10px!important;border-right:0!important;border-bottom:1px solid #d7d7d7!important}.settings-tab{min-width:max-content!important}.settings-body{padding:16px 0 0!important}#settings-dialog .key-workspace{grid-template-columns:1fr;min-height:0}.key-provider-list{max-height:180px;border-right:0!important;border-bottom:1px solid #d7d7d7!important}.key-provider-detail{min-height:360px;padding:16px!important}}
+  </style>
+  <div id="settings-dialog" class="dialog-overlay hidden"><div class="dialog-box" style="max-width:920px">
+    <div class="split-heading"><h3>设置</h3><button id="settings-close" class="dialog-close" onclick="window._closeSettings()">✕</button></div>
+    <div class="settings-shell">
+    <nav class="settings-tabs" role="tablist" aria-label="设置分类">
+      <button type="button" class="settings-tab" data-settings-tab="accounts" onclick="window._switchSettingsTab('accounts')">模型</button>
+      <button type="button" class="settings-tab" data-settings-tab="services" onclick="window._switchSettingsTab('services')">模型分配</button>
+      <button type="button" class="settings-tab" data-settings-tab="ui" onclick="window._switchSettingsTab('ui')">偏好设置</button>
+    </nav>
+    <div class="settings-body">
+    <div id="settings-ui" class="settings-pane hidden">
+      <p class="hint">界面缩放与主题色调，保存在本机浏览器里，对所有项目生效。</p>
+      <div class="group-card" style="margin-top:12px">
+        <p class="group-title">数据保存位置</p>
+        <p class="group-note" id="data-location-current">加载中…</p>
+        <div class="data-location-row">
+          <input id="data-location-input" type="text" placeholder="例如 D:\口播数据" aria-label="数据保存目录路径" />
+          <button type="button" class="secondary" id="data-location-choose">选择文件夹</button>
+          <button type="button" class="secondary" id="data-location-migrate">迁移到此处</button>
+        </div>
+        <p class="group-note" id="data-location-note">迁移会同步项目数据和本地配置，重启软件后生效；原数据保留备份。安装版支持。</p>
+        <button type="button" class="secondary" id="data-location-reset">恢复默认位置</button>
+      </div>
+    </div>
+    <div id="settings-accounts" class="settings-pane">
+      <div id="settings-accounts-content" class="stack"></div>
+    </div>
+    <div id="settings-services" class="settings-pane hidden">
+      <div id="settings-services-content"></div>
+    </div>
+    </div>
+    </div>
+    <div class="dialog-actions"><button id="settings-save" class="dialog-btn primary" onclick="window._saveSettings()">保存设置</button><button class="dialog-btn secondary" onclick="window._closeSettings()">关闭</button></div>
+    <p id="settings-status" class="hint"></p>
+  </div></div>
+  <div id="manage-dialog" class="dialog-overlay hidden"><div class="dialog-box" style="max-width:480px"><div class="split-heading"><h3>项目记录</h3><button id="manage-close" class="dialog-close" onclick="window._closeManage()">✕</button></div><div id="manage-list" class="manage-list"></div></div></div>
+  <div id="confirm-dialog" class="dialog-overlay hidden"><div class="dialog-box"><p id="confirm-message">要保存当前项目吗？</p><div class="dialog-actions"><button id="confirm-save" class="dialog-btn primary" onclick="window._doSaveAndNew()">保存并新建</button><button id="confirm-discard" class="dialog-btn secondary" onclick="window._doDiscardAndNew()">不保存</button><button id="confirm-cancel" class="dialog-btn secondary" onclick="window._doCancelNew()">取消</button></div></div></div>
+  <div id="broll-editor-dialog" class="dialog-overlay hidden"><div class="dialog-box broll-editor-box"><div class="split-heading"><h3 id="broll-editor-heading">编辑 B-roll</h3><button id="broll-editor-close" class="dialog-close" type="button">✕</button></div><div id="broll-editor-content" class="broll-editor-content"></div><div class="dialog-actions"><button id="broll-editor-save" class="dialog-btn primary" type="button">保存</button><button id="broll-editor-cancel" class="dialog-btn secondary" type="button">取消</button></div><p id="broll-editor-status" class="hint"></p></div></div>
+  <script src="/static/app.js?v=lite-12"></script>
+<script src="/static/upgrade.js?v=27"></script></body>
+</html>

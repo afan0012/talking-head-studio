@@ -1,0 +1,5 @@
+fastapi>=0.136,<0.137
+uvicorn[standard]>=0.46,<0.47
+python-multipart>=0.0.20,<0.1
+dashscope>=1.25
+httpx>=0.28

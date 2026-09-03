@@ -1,0 +1,67 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# ── 用户数据（不提交，每个运行实例独立）──
+data/jobs/*
+!data/jobs/.gitkeep
+data/jobs.json
+data/custom_providers.json
+data/model_routes.json
+data/*.log
+data/*.bak
+data/uvicorn*.log
+outputs/*
+!outputs/.gitkeep
+
+# ── 生成的临时文件 ──
+*.mp4
+*.wav
+*.jpg
+*.png
+*.srt
+*.pcm
+*.part
+*.crdownload
+*.tmp
+
+# ── 测试/临时产物 ──
+work/frames/
+work/__pycache__/
+
+# ── 环境与密钥 ──
+.env
+*.env
+.env.*
+!.env.example
+
+# ── 打包产物 ──
+dist-release/
+dist-windows/
+
+# ── IDE / 编辑器 ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS 文件 ──
+.DS_Store
+Thumbs.db
+
+# ── 内部材料与本地产物（公开发布隔离）──
+work/
+*-product-notes.md
+.hf-cache/
+.review-ledger.json
+.review-diff.patch
+*.log
+*.bak*
+.pytest_cache/
